@@ -10,6 +10,17 @@ const ASPECT = WIDTH / HEIGHT;
 const NEAR = 0.1;
 const FAR = 10000;
 
+// Control variables
+
+const paramaters = {    
+    numberOfParticles: 8000,
+};
+
+const particleSystemParmaters = {
+    particleSystemZ: -800,
+    rotationY : 0.01
+}
+
 // Create a WebGL renderer, camera
 // and a scene
 const renderer = new THREE.WebGLRenderer();
@@ -22,8 +33,6 @@ const camera =
     );
 
 const scene = new THREE.Scene();
-const numberOfParticles = 2000;
-
 
 // Add the camera to the scene.
 scene.add(camera);
@@ -32,12 +41,12 @@ renderer.setSize(WIDTH, HEIGHT);
 
 attachRenderer(renderer);
 
-var particleSystem = createParticles(numberOfParticles);
+var particleSystem = createParticles(paramaters.numberOfParticles);
 
 scene.add(createLight());
 scene.add(particleSystem);
 
-particleSystem.position.z = -1000;
+particleSystem.position.z = particleSystemParmaters.particleSystemZ;
 
 function update () {
 
@@ -50,7 +59,7 @@ function update () {
 }
 
 function updateParticleSystem(){
-    particleSystem.rotation.y += 0.01;
+    particleSystem.rotation.y += particleSystemParmaters.rotationY;
 
     particleSystem.material.color.r += getRandom();
     particleSystem.material.color.g += getRandom();
@@ -59,7 +68,7 @@ function updateParticleSystem(){
 
 function updateParticles(){
 
-    for(var i =0; i < numberOfParticles; i++){
+    for(var i =0; i < particleSystem.geometry.vertices.length; i++){
         var particle = particleSystem.geometry.vertices[i];
 
         if(particle.y < -200){
@@ -75,8 +84,26 @@ function updateParticles(){
     particleSystem.geometry.verticesNeedUpdate = true;
 }
 
+function changeNumberOfParticle(amount){
+    console.log(amount);
+    var change = amount - particleSystem.geometry.vertices.length;
+    if (change >0){
+        for (var i=0; i < change; i++)
+            particleSystem.geometry.vertices.push(createParticle());
+    }
+    else if (change < 0){
+        particleSystem.geometry.vertices.splice(0, Math.abs(change));
+    }
+}
+
 // Schedule the first frame.
 requestAnimationFrame(update);
+
+var gui = new dat.GUI();
+
+gui.add(paramaters, 'numberOfParticles').min(0).max(20000).step(100).listen().onChange((value) => {
+    changeNumberOfParticle(value);
+});
 
 })();
 
@@ -101,7 +128,7 @@ function createParticles(numberOfParticles){
 
     var pMaterial = new THREE.PointsMaterial({
             color: 0xAA3939,
-            size: 20,
+            size: 10,
             map: texture,
             blending: THREE.AdditiveBlending,
             transparent: true,
@@ -109,23 +136,7 @@ function createParticles(numberOfParticles){
     });
 
     for (var p = 0; p < numberOfParticles; p++) {
-
-  // create a particle with random
-  // position values, -250 -> 250
-  var pX = Math.random() * 300 - 250,
-      pY = Math.random() * 500 - 250,
-      pZ = (Math.random() * 500 - 250),
-      particle = new THREE.Vector3(pX, pY, pZ);
-
-
-    // create a velocity vector
-    particle.velocity = new THREE.Vector3(
-    0,              // x
-    -Math.random(), // y: random vel
-    0);             // z
-
-    // add it to the geometry
-    particles.vertices.push(particle);
+        particles.vertices.push(createParticle());
     }
 
     // create the particle system
@@ -136,6 +147,25 @@ function createParticles(numberOfParticles){
     particleSystem.sortParticles = true;
 
     return particleSystem;
+}
+
+function createParticle(){
+
+    // create a particle with random
+    // position values, -250 -> 250
+    var pX = Math.random() * 1000 - 500,
+        pY = Math.random() * 1000 - 500,
+        pZ = (Math.random() * 1000 - 500),
+        particle = new THREE.Vector3(pX, pY, pZ);
+
+
+        // create a velocity vector
+        particle.velocity = new THREE.Vector3(
+        0,              // x
+        -Math.random(), // y: random vel
+        0);             // z
+
+        return particle;
 }
 
 
