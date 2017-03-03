@@ -1,8 +1,8 @@
 (() => {
 
 // Set the scene size.
-const WIDTH = 800;
-const HEIGHT = 800;
+const WIDTH = window.innerWidth;
+const HEIGHT = window.innerHeight;
 
 // Set some camera attributes.
 const VIEW_ANGLE = 45;
@@ -40,13 +40,21 @@ scene.add(particleSystem);
 particleSystem.position.z = -1000;
 
 function update () {
-  particleSystem.rotation.y += 0.01;
 
+  updateParticleSystem();
   updateParticles();
 
   // Draw!
   renderer.render(scene, camera);
   requestAnimationFrame(update);
+}
+
+function updateParticleSystem(){
+    particleSystem.rotation.y += 0.01;
+
+    particleSystem.material.color.r += getRandom();
+    particleSystem.material.color.g += getRandom();
+    particleSystem.material.color.b += getRandom();
 }
 
 function updateParticles(){
@@ -135,4 +143,8 @@ function attachRenderer(renderer){
     var domContainer = document.querySelector('#container');
 
     domContainer.appendChild(renderer.domElement);
+}
+
+function getRandom(){
+    return Math.random() * (Math.random() > 0.5 ? 0.01 : -0.01);
 }
