@@ -13,12 +13,13 @@ const FAR = 10000;
 // Control variables
 
 const paramaters = {    
-    numberOfParticles: 8000,
+    numberOfParticles: 8200,
 };
 
 const particleSystemParmaters = {
     particleSystemZ: -800,
-    rotationY : 0.01
+    rotationY : 0.01,
+    colourChange : 0.01
 }
 
 // Create a WebGL renderer, camera
@@ -55,6 +56,12 @@ function update () {
 
   // Draw!
   renderer.render(scene, camera);
+  
+  var currentParticles = particleSystem.geometry.vertices.length;
+
+  if (currentParticles >=2000 && Math.random() >= 0.5)
+    changeNumberOfParticle(particleSystem.geometry.vertices.length -800);
+
   requestAnimationFrame(update);
 }
 
@@ -85,7 +92,6 @@ function updateParticles(){
 }
 
 function changeNumberOfParticle(amount){
-    console.log(amount);
     var change = amount - particleSystem.geometry.vertices.length;
     if (change >0){
         for (var i=0; i < change; i++)
@@ -105,7 +111,9 @@ gui.add(paramaters, 'numberOfParticles').min(0).max(20000).step(100).listen().on
     changeNumberOfParticle(value);
 });
 
-})();
+gui.add(particleSystemParmaters, 'rotationY').min(-0.1).max(0.1).step(0.005).listen();
+
+gui.add(particleSystemParmaters, 'colourChange').min(0.001).max(0.1).step(0.005).listen();
 
 function createLight(){
     const pointLight =
@@ -176,5 +184,7 @@ function attachRenderer(renderer){
 }
 
 function getRandom(){
-    return Math.random() * (Math.random() > 0.5 ? 0.01 : -0.01);
+    return Math.random() * ( particleSystemParmaters.colourChange * ( Math.random() > 0.5 ? 1 : -1));
 }
+
+})();
