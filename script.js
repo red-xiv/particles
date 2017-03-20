@@ -5,7 +5,7 @@ const WIDTH = window.innerWidth;
 const HEIGHT = window.innerHeight;
 
 // Set some camera attributes.
-const VIEW_ANGLE = 45;
+const VIEW_ANGLE = 90;
 const ASPECT = WIDTH / HEIGHT;
 const NEAR = 0.1;
 const FAR = 10000;
@@ -13,13 +13,131 @@ const FAR = 10000;
 // Control variables
 
 const paramaters = {    
-    numberOfParticles: 8200,
+    numberOfParticles: 15200,
+    shapeChange: 60,
 };
 
+class Shape {
+    isWithinBounds(x,y,z){}
+    getStartingCoords(){}
+}
+
+class Square extends Shape {
+    constructor(height, width, depth){
+        super();
+        this.height = height;
+        this.width = width;
+        this.depth = depth;
+    }
+
+    isWithinBounds(x,y,z) {
+        return (Math.abs(x) <= this.width / 2)  && (Math.abs(y) <= this.height / 2) && (Math.abs(z) <= this.depth / 2); 
+    }
+
+    getStartingCoords(){
+        return [Math.random() * this.height - (this.height / 2), Math.random() * this.width - (this.width / 2), Math.random() * this.depth - (this.depth / 2)];
+    }
+}
+
+class Circle extends Shape {
+    constructor(radius){
+        super();
+        this.radius = radius;
+    }
+
+    isWithinBounds(x,y,z){
+        return getOriginDistance(x,y,z) <= this.radius;
+    }
+
+    getStartingCoords(){
+        var coords;
+
+        do{
+            coords = this.getRandomCoords();
+        } while(!this.isWithinBounds(coords[0], coords[1], coords[2]))
+
+        return coords;
+    }
+
+    getRandomCoords(){
+        return [Math.random() * (this.radius * 2) - this.radius,Math.random() * (this.radius * 2) - this.radius, Math.random() * (this.radius * 2) - this.radius];
+    }
+}
+
+class Diamond extends Shape {
+    constructor(height, width){
+        super();
+        this.height = height;
+        this.width = width;
+        this.topAngle = Math.atan(this.height/2 / this.width/2);
+    }
+
+    getStartingCoords(){
+        var y =  Math.random() * this.height - (this.height / 2);
+        var width = this.getWidth(this.height - y);
+
+        var x =  Math.random() * width - (width / 2);
+        var z =  Math.random() * width - (width / 2);
+
+        return [x,y,z];
+    }
+
+    isWithinBounds(x,y,z) {
+        var trueY = Math.abs(y);
+        var width = this.getWidth((this.height/2) - trueY);
+
+        return (trueY <= this.height / 2) && (Math.abs(x) <= width / 2)  && (Math.abs(z) <= width / 2); 
+    }
+
+    getWidth(height){
+        return height * Math.tan(this.topAngle) * 2;
+    }
+}
+
+class InvertedDiamond extends Shape {
+    constructor(height, width){
+        super();
+        this.height = height;
+        this.width = width;
+        this.topAngle = Math.atan(this.height/2 / this.width/2);
+    }
+
+    getStartingCoords(){
+        var y =  Math.random() * this.height - (this.height / 2);
+        var width = this.getWidth(y);
+
+        var x =  Math.random() * width - (width / 2);
+        var z =  Math.random() * width - (width / 2);
+
+        return [x,y,z];
+    }
+
+    isWithinBounds(x,y,z) {
+        var trueY = Math.abs(y);
+        var width = this.getWidth(trueY);
+
+        return (trueY <= this.height / 2) && (Math.abs(x) <= width / 2)  && (Math.abs(z) <= width / 2); 
+    }
+
+    getWidth(height){
+        return height / Math.tan(this.topAngle) * 4;
+    }
+}
+
+const square = new Square(1000,1000,1000);
+const circle = new Circle(800);
+const invertedDiamond = new InvertedDiamond(1000,1000);
+const diamond = new Diamond(1000,1000);
+
+const shapes = [square, circle, diamond, invertedDiamond];
+
 const particleSystemParmaters = {
-    particleSystemZ: -800,
-    rotationY : 0.01,
-    colourChange : 0.01
+    particleSystemZ: -1400,
+    rotationY : 0.005,
+    colourChange : 0.01,
+    shape: circle,
+    previousShape: circle,
+    shapeChange: paramaters.shapeChange
 }
 
 // Create a WebGL renderer, camera
@@ -59,7 +177,7 @@ function update () {
   
   var currentParticles = particleSystem.geometry.vertices.length;
 
-  if (currentParticles >=2000 && Math.random() >= 0.5)
+  if (currentParticles >= 8000 && Math.random() >= 0.5)
     changeNumberOfParticle(particleSystem.geometry.vertices.length -800);
 
   requestAnimationFrame(update);
@@ -71,17 +189,31 @@ function updateParticleSystem(){
     particleSystem.material.color.r += getRandom();
     particleSystem.material.color.g += getRandom();
     particleSystem.material.color.b += getRandom();
+
+    if (particleSystemParmaters.shapeChange > 0)
+        particleSystemParmaters.shapeChange --;
 }
 
 function updateParticles(){
+    var shapeChangeProgress = particleSystemParmaters.shapeChange / paramaters.shapeChange;
 
     for(var i =0; i < particleSystem.geometry.vertices.length; i++){
         var particle = particleSystem.geometry.vertices[i];
+        var applicableShape = Math.random() >= shapeChangeProgress ? particleSystemParmaters.shape : particleSystemParmaters.previousShape;
 
-        if(particle.y < -200){
-            particle.y = 200;
+        if (!applicableShape.isWithinBounds(particle.x, particle.y, particle.z)){
+            var coords = applicableShape.getStartingCoords();
+
             particle.velocity.y = 0;
+            particle.x = coords[0];
+            particle.y = coords[1];
+            particle.z = coords[2];
         }
+
+        // if(particle.y < -200){
+        //     particle.y = 200;
+        //     particle.velocity.y = 0;
+        // }
 
         particle.velocity.y -= Math.random() * 0.05;
 
@@ -113,7 +245,11 @@ gui.add(paramaters, 'numberOfParticles').min(0).max(20000).step(100).listen().on
 
 gui.add(particleSystemParmaters, 'rotationY').min(-0.1).max(0.1).step(0.005).listen();
 
-gui.add(particleSystemParmaters, 'colourChange').min(0.001).max(0.1).step(0.005).listen();
+gui.add(particleSystemParmaters, 'colourChange').min(0.001).max(0.1).step(0.0001).listen();
+
+gui.add(particleSystemParmaters, 'particleSystemZ').min(-2000).max(0).step(20).onChange((value) => {
+    particleSystem.position.z = value;
+})
 
 function createLight(){
     const pointLight =
@@ -160,22 +296,28 @@ function createParticles(numberOfParticles){
 function createParticle(){
 
     // create a particle with random
-    // position values, -250 -> 250
-    var pX = Math.random() * 1000 - 500,
-        pY = Math.random() * 1000 - 500,
-        pZ = (Math.random() * 1000 - 500),
-        particle = new THREE.Vector3(pX, pY, pZ);
+    var coords = particleSystemParmaters.shape.getStartingCoords();
+    var particle = new THREE.Vector3(coords[0], coords[1], coords[2]);
 
+    // create a velocity vector
+    particle.velocity = new THREE.Vector3(
+    0,              // x
+    -Math.random(), // y: random vel
+    0);             // z
 
-        // create a velocity vector
-        particle.velocity = new THREE.Vector3(
-        0,              // x
-        -Math.random(), // y: random vel
-        0);             // z
-
-        return particle;
+    return particle;
 }
 
+function toggleShape(){
+    var currentShape = particleSystemParmaters.shape;
+    var nextIndex = shapes.indexOf(currentShape) + 1 < shapes.length ?  shapes.indexOf(currentShape) + 1 : 0;
+    
+    particleSystemParmaters.previousShape = shapes[nextIndex];
+    particleSystemParmaters.shape = shapes[nextIndex];
+    particleSystemParmaters.shapeChange = paramaters.shapeChange;
+
+    changeNumberOfParticle(paramaters.numberOfParticles);
+}
 
 function attachRenderer(renderer){
     var domContainer = document.querySelector('#container');
@@ -185,6 +327,16 @@ function attachRenderer(renderer){
 
 function getRandom(){
     return Math.random() * ( particleSystemParmaters.colourChange * ( Math.random() > 0.5 ? 1 : -1));
+}
+
+function getOriginDistance(x, y, z){
+    return Math.sqrt((Math.pow(x,2) + Math.pow(y,2) + Math.pow(z,2)));
+}
+
+document.onkeydown = (e) => {
+    if (e.keyCode == 32){
+        toggleShape();
+    }
 }
 
 })();
