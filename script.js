@@ -210,11 +210,6 @@ function updateParticles(){
             particle.z = coords[2];
         }
 
-        // if(particle.y < -200){
-        //     particle.y = 200;
-        //     particle.velocity.y = 0;
-        // }
-
         particle.velocity.y -= Math.random() * 0.05;
 
         particle.addVectors(particle, particle.velocity);
@@ -265,8 +260,8 @@ function createLight(){
 
 function createParticles(numberOfParticles){
     THREE.ImageUtils.crossOrigin = '';
-    //var texture = THREE.ImageUtils.loadTexture("https://aerotwist.com/static/tutorials/creating-particles-with-three-js/images/particle.png")
-    var texture = THREE.ImageUtils.loadTexture("https://threejs.org/examples/textures/particle2.png")
+    var texture = THREE.ImageUtils.loadTexture("https://aerotwist.com/static/tutorials/creating-particles-with-three-js/images/particle.png")
+    //var texture = THREE.ImageUtils.loadTexture("https://threejs.org/examples/textures/particle2.png")
 
     var particles = new THREE.Geometry();
 
