@@ -132,8 +132,8 @@ const diamond = new Diamond(1000,1000);
 const shapes = [square, circle, diamond, invertedDiamond];
 
 const particleSystemParmaters = {
-    particleSystemZ: -1400,
-    rotationY : 0.005,
+    particleSystemZ: -1040,
+    rotationY : 0.002,
     colourChange : 0.01,
     shape: circle,
     previousShape: circle,
@@ -243,7 +243,7 @@ gui.add(paramaters, 'numberOfParticles').min(0).max(20000).step(100).listen().on
     changeNumberOfParticle(value);
 });
 
-gui.add(particleSystemParmaters, 'rotationY').min(-0.1).max(0.1).step(0.005).listen();
+gui.add(particleSystemParmaters, 'rotationY').min(-0.1).max(0.1).step(0.001).listen();
 
 gui.add(particleSystemParmaters, 'colourChange').min(0.001).max(0.1).step(0.0001).listen();
 
@@ -335,6 +335,12 @@ function getOriginDistance(x, y, z){
 
 document.onkeydown = (e) => {
     if (e.keyCode == 32){
+        var overlays = document.getElementsByClassName('overlay');
+
+        for(var i=0; i< overlays.length;i++){
+            overlays[i].remove();
+        }
+
         toggleShape();
     }
 }
